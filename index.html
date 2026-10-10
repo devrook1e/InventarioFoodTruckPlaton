@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inventario Food Truck</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#E9EFEC;--card:#fff;--ink:#14302B;--mute:#5E7A73;--line:#cfdad6;--red:#D8412F;--gold:#F2B632;--ok:#2E8B64;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0F1D1A;--card:#182B27;--ink:#E6F0ED;--mute:#8FAAA3;--line:#2A423D;--ok:#4CC38D}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+main{max-width:760px;margin:0 auto;padding:20px 16px 100px}
+h1{font-size:2rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px}
+.sub{color:var(--mute);margin:2px 0 16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:14px;padding:12px 14px;border:1px solid var(--line)}
+.stat b{display:block;font-size:1.4rem;font-weight:800}
+.stat span{font-size:.8rem;color:var(--mute)}
+.stat.alert{background:var(--red);border-color:var(--red);color:#fff}.stat.alert span{color:#fff;opacity:.85}
+input,select,button{font:inherit;color:inherit}
+input,select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;width:100%}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+button:disabled{opacity:.5;cursor:default}
+.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs,.chips,.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.tools input{flex:1 1 180px}.tools select{flex:0 1 160px}
+.chip[aria-pressed="true"],.tab[aria-selected="true"]{background:var(--gold);color:#14302B;border-color:var(--gold)}
+.lbl{font-size:.82rem;color:var(--mute)}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.item.low{border-left:6px solid var(--gold)}.item.out{border-left:6px solid var(--red)}
+.name{font-weight:600;font-size:1.05rem}
+.meta{font-size:.82rem;color:var(--mute)}
+.tag{font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:6px}
+.tag.low{background:var(--gold);color:#14302B}.tag.out{background:var(--red);color:#fff}
+.bar{grid-column:1/-1;height:6px;background:var(--line);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}.low .bar i{background:var(--gold)}.out .bar i{background:var(--red)}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:40px;height:40px;padding:0;font-size:1.3rem;line-height:1}
+.qty output{min-width:70px;text-align:center;font-weight:800;font-size:1.1rem}
+.acts{grid-column:1/-1;display:flex;gap:14px}
+.acts button{border:0;background:none;padding:2px 0;color:var(--mute);font-size:.85rem;text-decoration:underline}
+.empty{text-align:center;color:var(--mute);padding:40px 10px;background:var(--card);border:1px dashed var(--line);border-radius:14px}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 6px 18px rgba(0,0,0,.25);padding:14px 20px;border-radius:99px;background:var(--red);border-color:var(--red);color:#fff}
+dialog{border:0;border-radius:18px;padding:20px;width:min(440px,92vw);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:.82rem;color:var(--mute);display:block}label.full{grid-column:1/-1}
+.row{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+pre{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:12px;margin:0;max-height:50vh;overflow:auto;font:inherit}
+#login{max-width:380px;margin:12vh auto 0;padding:0 16px}
+#login form{display:grid;gap:12px;margin-top:16px}
+.err{color:var(--red);min-height:1.2em;font-size:.9rem}
+.cierre{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.cierre summary{cursor:pointer;font-weight:600}
+.cierre table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9rem}
+.cierre td{padding:4px 0;border-top:1px solid var(--line)}.cierre td:last-child{text-align:right;font-weight:600}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<section id="login" hidden>
+  <h1>Inventario del truck</h1>
+  <p class="sub">Ingresa con tu cuenta del equipo.</p>
+  <form id="lf">
+    <label>Correo<input id="le" type="email" autocomplete="username" required></label>
+    <label>Contraseña<input id="lp" type="password" autocomplete="current-password" required></label>
+    <div class="err" id="lerr" role="alert"></div>
+    <button class="primary" id="lb">Entrar</button>
+  </form>
+</section>
+
+<main id="app" hidden>
+  <div class="top"><h1>Inventario del truck</h1><button id="out">Salir</button></div>
+  <p class="sub" id="who"></p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t1" aria-selected="true">Inventario</button>
+    <button class="tab" role="tab" id="t2" aria-selected="false">Historial de cierres</button>
+  </div>
+
+  <div id="v1">
+    <section class="stats" id="stats" aria-live="polite"></section>
+    <div class="tools">
+      <input id="q" type="search" placeholder="Buscar producto" aria-label="Buscar producto">
+      <select id="cat" aria-label="Categoría"></select>
+    </div>
+    <div class="chips">
+      <button class="chip" id="onlyLow" aria-pressed="false">Por reponer</button>
+      <button id="list">Lista de compras</button>
+      <button id="close">Cerrar el día</button>
+    </div>
+    <div class="chips"><span class="lbl">Sumar/restar de a:</span>
+      <button class="chip step" data-s="1" aria-pressed="true">1</button>
+      <button class="chip step" data-s="0.5" aria-pressed="false">½</button>
+      <button class="chip step" data-s="0.25" aria-pressed="false">¼</button>
+    </div>
+    <div id="items"></div>
+  </div>
+
+  <div id="v2" hidden></div>
+</main>
+<button class="fab" id="add" hidden>+ Producto</button>
+<div id="toast" role="status"></div>
+
+<dialog id="dlg">
+  <form method="dialog" id="f" onsubmit="return false">
+    <h2 id="dt">Nuevo producto</h2>
+    <div class="grid">
+      <label class="full">Nombre<input id="fn" required maxlength="80"></label>
+      <label>Categoría<input id="fc" list="cats"></label>
+      <label>Unidad<input id="fu" list="units" maxlength="10"></label>
+      <label>Cantidad actual<input id="fq" type="number" min="0" step="any" required></label>
+      <label>Mínimo<input id="fm" type="number" min="0" step="any" required></label>
+      <label class="full">Costo por unidad ($)<input id="fp" type="number" min="0" step="any"></label>
+    </div>
+    <datalist id="cats"></datalist>
+    <datalist id="units"><option value="un"><option value="kg"><option value="lt"><option value="pote"><option value="tarro"><option value="caja"><option value="bolsa"><option value="paquete"><option value="tira"></datalist>
+    <div class="row"><button type="button" id="cancel">Cancelar</button><button class="primary" id="save">Guardar producto</button></div>
+  </form>
+</dialog>
+
+<dialog id="ldlg">
+  <h2>Lista de compras</h2>
+  <pre id="ltxt"></pre>
+  <div class="row"><button id="lclose">Cerrar</button><button class="primary" id="lcopy">Copiar lista</button></div>
+</dialog>
+
+<script>
+const db=supabase.createClient("https://sszefxzioviehclzckzc.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzemVmeHppb3ZpZWhjbHpja3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1OTgwMTIsImV4cCI6MjEwNzE3NDAxMn0.m4hvpyzN56l9ryl_8DvqyEDmwl1ev9nA74Qd1Er2peQ");
+const $=id=>document.getElementById(id);
+let items=[],editing=null,onlyLow=false,step=1,timer=null;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=n=>"$"+Math.round(n).toLocaleString("es-CL");
+function fmt(n){n=Math.round(n*100)/100;const w=Math.floor(n),f=Math.round((n-w)*100)/100,m={0.25:"¼",0.5:"½",0.75:"¾"};
+  if(m[f])return (w?w+" ":"")+m[f];return n.toLocaleString("es-CL")}
+const status=i=>i.cantidad<=0?"out":i.cantidad<=i.minimo?"low":"ok";
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),2500)}
+
+/* ---------- sesión ---------- */
+async function init(){
+  const {data}=await db.auth.getSession();show(data.session);
+  db.auth.onAuthStateChange((_e,s)=>show(s));
+}
+function show(s){
+  $("login").hidden=!!s;$("app").hidden=!s;$("add").hidden=!s;
+  clearInterval(timer);
+  if(s){$("who").textContent=s.user.email;cargar();timer=setInterval(()=>{if(!document.hidden&&!$("dlg").open)cargar()},30000)}
+}
+$("lf").onsubmit=async e=>{
+  e.preventDefault();$("lb").disabled=true;$("lerr").textContent="";
+  const {error}=await db.auth.signInWithPassword({email:$("le").value.trim(),password:$("lp").value});
+  $("lb").disabled=false;
+  if(error)$("lerr").textContent="Correo o contraseña incorrectos. Revisa los datos e inténtalo de nuevo.";
+};
+$("out").onclick=()=>db.auth.signOut();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("app").hidden)cargar()});
+
+/* ---------- inventario ---------- */
+async function cargar(){
+  const {data,error}=await db.from("productos").select("*").order("nombre");
+  if(error){toast("No se pudo cargar el inventario. Revisa tu conexión.");return}
+  items=data;render();
+}
+function render(){
+  const cats=[...new Set(items.map(i=>i.categoria).filter(Boolean))].sort(),cur=$("cat").value;
+  $("cat").innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option ${c===cur?"selected":""}>${esc(c)}</option>`).join("");
+  $("cats").innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join("");
+  const low=items.filter(i=>status(i)!=="ok").length,val=items.reduce((a,i)=>a+i.cantidad*(i.costo||0),0);
+  $("stats").innerHTML=`<div class="stat"><b>${items.length}</b><span>Productos</span></div>
+   <div class="stat ${low?"alert":""}"><b>${low}</b><span>Por reponer</span></div>
+   <div class="stat"><b>${money(val)}</b><span>Valor en stock</span></div>`;
+  const q=$("q").value.trim().toLowerCase(),c=$("cat").value,ord={out:0,low:1,ok:2};
+  const list=items.filter(i=>(!q||i.nombre.toLowerCase().includes(q))&&(!c||i.categoria===c)&&(!onlyLow||status(i)!=="ok"))
+    .sort((a,b)=>ord[status(a)]-ord[status(b)]||a.nombre.localeCompare(b.nombre));
+  $("items").innerHTML=list.length?list.map(i=>{
+    const s=status(i),pct=Math.min(100,i.minimo?i.cantidad/(i.minimo*2)*100:(i.cantidad>0?100:0));
+    return `<article class="item ${s}">
+     <div><div class="name">${esc(i.nombre)}${s==="out"?'<span class="tag out">Agotado</span>':s==="low"?'<span class="tag low">Stock bajo</span>':""}</div>
+     <div class="meta">${esc(i.categoria||"Sin categoría")} · mínimo ${fmt(i.minimo)} ${esc(i.unidad)}${i.costo?" · "+money(i.costo)+"/"+esc(i.unidad):""}</div></div>
+     <div class="qty"><button data-a="dec" data-id="${i.id}" aria-label="Restar a ${esc(i.nombre)}">−</button><output>${fmt(i.cantidad)} ${esc(i.unidad)}</output><button data-a="inc" data-id="${i.id}" aria-label="Sumar a ${esc(i.nombre)}">+</button></div>
+     <div class="bar"><i style="width:${pct}%"></i></div>
+     <div class="acts"><button data-a="edit" data-id="${i.id}">Editar</button><button data-a="del" data-id="${i.id}">Eliminar</button></div></article>`}).join("")
+   :`<div class="empty">${items.length?"Ningún producto coincide con el filtro.":"Aún no hay productos. Toca “+ Producto” para agregar el primero."}</div>`;
+}
+async function adjust(id,d){
+  const i=items.find(x=>x.id===id),v=Math.max(0,Math.round((i.cantidad+d)*100)/100);
+  i.cantidad=v;render();
+  const {error}=await db.from("productos").update({cantidad:v,actualizado:new Date().toISOString()}).eq("id",id);
+  if(error){toast("No se guardó el cambio. Inténtalo otra vez.");cargar()}
+}
+$("items").onclick=async e=>{
+  const b=e.target.closest("button");if(!b)return;const id=+b.dataset.id,a=b.dataset.a;
+  if(a==="inc")adjust(id,step);else if(a==="dec")adjust(id,-step);else if(a==="edit")openForm(id);
+  else if(a==="del"){const i=items.find(x=>x.id===id);
+    if(confirm(`¿Eliminar "${i.nombre}"?`)){const {error}=await db.from("productos").delete().eq("id",id);
+      if(error)toast("No se pudo eliminar.");else{toast("Producto eliminado");cargar()}}}
+};
+["q","cat"].forEach(id=>$(id).oninput=render);
+$("onlyLow").onclick=e=>{onlyLow=!onlyLow;e.target.setAttribute("aria-pressed",onlyLow);render()};
+document.querySelectorAll(".step").forEach(b=>b.onclick=()=>{step=+b.dataset.s;document.querySelectorAll(".step").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+
+function openForm(id){
+  editing=id||null;const i=items.find(x=>x.id===id)||{nombre:"",categoria:"",unidad:"un",cantidad:"",minimo:"",costo:""};
+  $("dt").textContent=id?"Editar producto":"Nuevo producto";
+  $("fn").value=i.nombre;$("fc").value=i.categoria||"";$("fu").value=i.unidad;$("fq").value=i.cantidad;$("fm").value=i.minimo;$("fp").value=i.costo||"";
+  $("dlg").showModal();$("fn").focus();
+}
+$("add").onclick=()=>openForm();
+$("cancel").onclick=()=>$("dlg").close();
+$("save").onclick=async()=>{
+  if(!$("f").reportValidity())return;
+  const d={nombre:$("fn").value.trim(),categoria:$("fc").value.trim(),unidad:$("fu").value.trim()||"un",cantidad:+$("fq").value,minimo:+$("fm").value,costo:+$("fp").value||0,actualizado:new Date().toISOString()};
+  $("save").disabled=true;
+  const {error}=editing?await db.from("productos").update(d).eq("id",editing):await db.from("productos").insert(d);
+  $("save").disabled=false;
+  if(error){toast("No se pudo guardar el producto.");return}
+  $("dlg").close();toast("Producto guardado");cargar();
+};
+
+/* ---------- lista de compras ---------- */
+$("list").onclick=()=>{
+  const need=items.filter(i=>status(i)!=="ok"&&i.minimo>0).map(i=>({i,buy:Math.max(0.25,Math.ceil((i.minimo*2-i.cantidad)*4)/4)}));
+  const tot=need.reduce((a,n)=>a+n.buy*(n.i.costo||0),0);
+  $("ltxt").textContent=need.length?need.map(n=>`• ${n.i.nombre}: ${fmt(n.buy)} ${n.i.unidad}`).join("\n")+(tot?`\n\nCosto estimado: ${money(tot)}`:""):"Todo está sobre el mínimo. No necesitas comprar nada. (Solo se incluyen productos con mínimo definido.)";
+  $("ldlg").showModal();
+};
+$("lclose").onclick=()=>$("ldlg").close();
+$("lcopy").onclick=async e=>{try{await navigator.clipboard.writeText($("ltxt").textContent);e.target.textContent="Copiada"}catch(x){e.target.textContent="Selecciona y copia"}};
+
+/* ---------- cierres ---------- */
+$("close").onclick=async()=>{
+  if(!items.length)return;
+  if(!confirm("¿Guardar el stock actual como cierre de hoy?"))return;
+  const detalle=items.map(i=>({nombre:i.nombre,categoria:i.categoria,unidad:i.unidad,cantidad:i.cantidad,minimo:i.minimo}));
+  const {error}=await db.from("cierres").insert({fecha:new Date().toLocaleDateString("en-CA"),detalle});
+  toast(error?"No se pudo guardar el cierre.":"Cierre del día guardado");
+};
+async function historial(){
+  $("v2").innerHTML='<div class="empty">Cargando…</div>';
+  const {data,error}=await db.from("cierres").select("*").order("creado",{ascending:false}).limit(30);
+  if(error){$("v2").innerHTML='<div class="empty">No se pudo cargar el historial.</div>';return}
+  $("v2").innerHTML=data.length?data.map(c=>{
+    const hora=new Date(c.creado).toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
+    const f=new Date(c.fecha+"T12:00:00").toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
+    return `<details class="cierre"><summary>${esc(f)} · cierre a las ${hora}</summary><table>${c.detalle.map(d=>`<tr><td>${esc(d.nombre)}</td><td>${fmt(d.cantidad)} ${esc(d.unidad)}</td></tr>`).join("")}</table></details>`}).join("")
+   :'<div class="empty">Aún no hay cierres. Usa “Cerrar el día” en la pestaña Inventario para guardar el primero.</div>';
+}
+function tab(n){
+  $("v1").hidden=n!==1;$("v2").hidden=n!==2;
+  $("t1").setAttribute("aria-selected",n===1);$("t2").setAttribute("aria-selected",n===2);
+  $("add").hidden=n!==1;if(n===2)historial();
+}
+$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);
+init();
+</script>
+</body>
+</html>
